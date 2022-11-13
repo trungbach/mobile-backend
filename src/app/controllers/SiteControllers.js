@@ -1,4 +1,3 @@
-const Course = require("./../../models/Course");
 const { ProductModel } = require("../../models/Products");
 const { PAGE_SIZE } = require("./../../constants");
 class SiteController {
@@ -11,11 +10,7 @@ class SiteController {
     }
     const skip = PAGE_SIZE * (page - 1);
     const sort = {};
-    if (
-      ["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(
-        sort_by
-      )
-    ) {
+    if (["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(sort_by)) {
       const sortArr = sort_by.split("_");
       sort[sortArr[0]] = sortArr[1];
     }
@@ -31,7 +26,8 @@ class SiteController {
         .skip(skip)
         .limit(PAGE_SIZE);
       const total_products = await ProductModel.countDocuments({
-        name: { $regex: ".*" + name + ".*", $options: "i" },...filter
+        name: { $regex: ".*" + name + ".*", $options: "i" },
+        ...filter,
       });
       if (!listProductSearch) {
         return res.status(400).json({ message: "failed!!" });

@@ -8,7 +8,7 @@ async function connect() {
     await mongoose.connect(URI, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log("connect succsessfully!!");
   } catch (error) {
-    console.log("connect loi cmnr");
+    console.log("connect loi");
   }
 }
 module.exports = { connect };

@@ -11,11 +11,7 @@ class ProductsController {
     }
     const skip = PAGE_SIZE * (page - 1);
     const sort = {};
-    if (
-      ["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(
-        sort_by
-      )
-    ) {
+    if (["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(sort_by)) {
       const sortArr = sort_by.split("_");
       sort[sortArr[0]] = sortArr[1];
     }
@@ -27,7 +23,7 @@ class ProductsController {
           price: 1,
           discount: 1,
           vote_average: 1,
-          vote_count:1,
+          vote_count: 1,
           images: 1,
           category_id: 1,
         })
@@ -57,11 +53,7 @@ class ProductsController {
     }
     const skip = PAGE_SIZE * (page - 1);
     const sort = {};
-    if (
-      ["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(
-        sort_by
-      )
-    ) {
+    if (["price_asc", "price_desc", "createdAt_asc", "createdAt_desc"].includes(sort_by)) {
       const sortArr = sort_by.split("_");
       sort[sortArr[0]] = sortArr[1];
     }
@@ -119,6 +111,7 @@ class ProductsController {
   //poss: /products/create
   createProduct = async (req, res) => {
     var images = [];
+    console.log("files:", req.files);
     const files = req?.files;
     if (!files) {
       return res.status(400).json({ message: "Upload file failed" });
@@ -131,8 +124,8 @@ class ProductsController {
       }
 
       const data = req.body;
-      const colors = renderListColorProducts()
-      const newProduct = new ProductModel({ ...data, images,colors });
+      const colors = renderListColorProducts();
+      const newProduct = new ProductModel({ ...data, images, colors });
       const product = await newProduct.save();
       res.status(200).json(product);
     } catch (error) {
@@ -146,9 +139,10 @@ class ProductsController {
     const listTrending = [];
     try {
       const listCategory = await CategoryModel.find({});
+      console.log("listCategory", listCategory);
       for (let category of listCategory) {
         const listProduct = await ProductModel.find({
-          category_id:category._id.toString(),
+          category_id: category._id.toString(),
         }).limit(5);
         const dataProductTrending = {};
         dataProductTrending.data = listProduct;
@@ -156,10 +150,10 @@ class ProductsController {
         dataProductTrending.name = category.name;
         listTrending.push(dataProductTrending);
       }
-      res.json(listTrending)
+      res.json(listTrending);
     } catch (error) {
-      res.status(500).json("err server")
-     }
+      res.status(500).json("err server");
+    }
   };
 }
 

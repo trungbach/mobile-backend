@@ -11,9 +11,7 @@ class AuthController {
       console.log(shippingInfo);
       const userData = await UserModel.findOne({ email });
       if (userData) {
-        return res
-          .status(409)
-          .json({ error: { message: "Account already axists" } });
+        return res.status(409).json({ error: { message: "Account already exists" } });
       }
       const newUser = new UserModel(data);
       const user = await newUser.save();
@@ -31,7 +29,7 @@ class AuthController {
 
       res.status(200).json({
         user,
-        message: "Register succsessfully <3",
+        message: "Register succsessfully",
       });
     } catch (error) {
       console.log(error.message);
