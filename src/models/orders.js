@@ -8,7 +8,7 @@ const Orders = new Schema(
     order_products: {
       type: [
         {
-          order_product_item: { type: Schema.Types.Mixed, },
+          order_product_item: { type: Schema.Types.Mixed },
           quantity: { type: Number, default: 1 },
           size: { type: Number, required: true },
           color: { type: String, required: true },
@@ -29,6 +29,11 @@ const Orders = new Schema(
     },
     quantity_items: { type: Number, required: true },
     total_price: { type: Number, required: true },
+    payment_status: {
+      type: String,
+      enum: ["Waiting", "Success", "Failed", "Overtime"],
+      default: "Waiting",
+    },
   },
   {
     timestamps: true,

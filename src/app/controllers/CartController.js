@@ -1,5 +1,4 @@
 const { CartModel } = require("./../../models/cart");
-const { ProductModel } = require("./../../models/Products");
 class CartController {
   //GET /
   getListCartByUserId = async (req, res) => {
@@ -32,9 +31,10 @@ class CartController {
   };
   //post : /cart/create
   createCart = async (req, res) => {
+    console.log("req", req);
     try {
       const data = req.body;
-      console.log(data);
+      console.log("body", data);
       const newCart = new CartModel(data);
       const cartProduct = await newCart.save();
       if (!cartProduct) {
@@ -42,7 +42,22 @@ class CartController {
           message: "Add cart error !!!",
         });
       }
-      res.status(200).json(cartProduct);
+
+      const listCart = await CartModel.findOne({
+        _id: cartProduct._id,
+      })
+        .lean()
+        .populate("product_id");
+      if (!listCart) {
+        return res.status(400).json({
+          error: "get error !!",
+        });
+      }
+      listCart.product = listCart.product_id;
+      delete listCart.product_id;
+      console.log("listCart:", listCart);
+
+      res.status(200).json(listCart);
     } catch (error) {
       res.status(500).json({
         message: "Server Error !!!",

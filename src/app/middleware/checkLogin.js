@@ -4,7 +4,7 @@ const UserModel = require("./../../models/user");
 const checkLogin = async (req, res, next) => {
   try {
     const token = req.headers.authorization;
-    const tokenDecode = jwt.verify(token, "thanh125");
+    const tokenDecode = jwt.verify(token.split(" ")[1], "trungbach");
     const { _id } = tokenDecode;
     const user = await UserModel.findOne({ _id });
     if (user) {

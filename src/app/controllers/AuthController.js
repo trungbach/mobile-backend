@@ -47,7 +47,7 @@ class AuthController {
         res.status(400).json({ message: "Sai tên đăng nhập hoặc mật khẩu" });
       } else {
         const { _id } = user;
-        const token = jwt.sign({ _id }, "thanh125");
+        const token = jwt.sign({ _id }, "trungbach");
         res.status(200).json({
           user,
           token,

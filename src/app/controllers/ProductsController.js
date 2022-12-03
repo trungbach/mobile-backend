@@ -139,7 +139,6 @@ class ProductsController {
     const listTrending = [];
     try {
       const listCategory = await CategoryModel.find({});
-      console.log("listCategory", listCategory);
       for (let category of listCategory) {
         const listProduct = await ProductModel.find({
           category_id: category._id.toString(),
