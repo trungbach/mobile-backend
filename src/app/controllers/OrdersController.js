@@ -3,7 +3,7 @@ const { CartModel } = require("./../../models/cart");
 const orders = require("./..//../models/orders");
 const { query } = require("express");
 const crypto = require("crypto");
-const axios = require("axios");
+const superagent = require("superagent");
 
 class OrdersController {
   getOrderByIdUser = async (req, res) => {
@@ -93,41 +93,31 @@ class OrdersController {
 
     // tạo order trạng thái chưa khởi tạo thanh toán, xóa cart.
     try {
-      const listCart = await CartModel.find({ _id: { $in: data.orders_id } })
-        .lean()
-        .select({ user_id: 0, createdAt: 0, updatedAt: 0, _id: 0 });
-      if (!listCart) {
-        return res.status(400).json("failed");
-      } else {
-        const order = { ...data };
-        delete order.orders_id;
-        order.order_products = listCart.map((item) => {
-          item.order_product_item = item.product_id;
-          delete item.product_id;
-          return { ...item };
-        });
-        await new OrdersModel(order).save();
-        await CartModel.deleteMany({ _id: { $in: data.orders_id } });
-        this.createMomo(data.total_price, res);
+      const orderMomoResponse = await this.createMomo(data.total_price, res);
+
+      // order thanh cong tra ve object co chua deeplink momo thanh toan. Thi xoa don do khoi Carts.
+      if (orderMomoResponse?.deeplink) {
+        const listCart = await CartModel.find({ _id: { $in: data.orders_id } })
+          .lean()
+          .select({ user_id: 0, createdAt: 0, updatedAt: 0, _id: 0 });
+        if (!listCart) {
+          return res.status(400).json("failed");
+        } else {
+          const order = { ...data };
+          delete order.orders_id;
+          order.order_products = listCart.map((item) => {
+            item.order_product_item = item.product_id;
+            delete item.product_id;
+            return { ...item };
+          });
+          await new OrdersModel(order).save();
+          await CartModel.deleteMany({ _id: { $in: data.orders_id } });
+        }
+        return res.status(200).json(orderMomoResponse);
       }
     } catch (error) {
       console.log("error", error.message);
       return res.status(500).json(error.message);
-    }
-  };
-
-  //delete /:id
-  deleteOrderById = async (req, res) => {
-    const { id } = req.params;
-    try {
-      const deleteProduct = await OrdersModel.findOneAndDelete({ _id: id });
-      if (!deleteProduct) {
-        return res.status(400).json("failed");
-      }
-      res.status(200).json(deleteProduct);
-    } catch (error) {
-      console.log(error.message);
-      res.status(500).json({ message: "server error !!!" });
     }
   };
 
@@ -136,8 +126,8 @@ class OrdersController {
     const accessKey = "F8BBA842ECF85";
     const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
     const partnerCode = "MOMO";
-    const orderInfo = "test";
-    const redirectUrl = "exp://192.168.1.108:19000";
+    const orderInfo = "Payment for Super Shoes";
+    const redirectUrl = "exp://192.168.0.43:19000";
     // const redirectUrl = "exp://172.20.10.2:19000";
     const ipnUrl = "exp://192.168.1.108:19000";
     const requestType = "captureWallet";
@@ -187,36 +177,17 @@ class OrdersController {
     });
 
     try {
-      // Create the HTTPS objects
-      const https = require("https");
-      const options = {
-        hostname: "test-payment.momo.vn",
-        port: 443,
-        path: "/v2/gateway/api/create",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(requestBody),
-        },
-      };
-      //Send the request and get the response
-      const req = https.request(options, (res) => {
-        res.setEncoding("utf8");
-        res.on("data", (body) => {
-          // console.log("Body: ", body);
-          return response.status(200).json(body);
-        });
-        res.on("end", () => {
-          console.log("No more data in response.");
-        });
-      });
-
-      req.on("error", (e) => {
-        console.log(`problem with request: ${e.message}`);
-      });
-      // write data to request body
-      req.write(requestBody);
-      req.end();
+      const apiEndpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+      const res = await superagent
+        .post(apiEndpoint)
+        .send(requestBody)
+        .set("Content-Type", "application/json");
+      // .end(function (err, res) {
+      //   console.log("err", err);
+      //   console.log("res", res.body);
+      //   return response.status(200).json(res.body);
+      // });
+      return res.body;
     } catch (error) {
       console.log("errror", error);
     }
@@ -302,6 +273,21 @@ class OrdersController {
     req.write(requestBody);
     req.end();
   }
+
+  //delete /:id
+  deleteOrderById = async (req, res) => {
+    const { id } = req.params;
+    try {
+      const deleteProduct = await OrdersModel.findOneAndDelete({ _id: id });
+      if (!deleteProduct) {
+        return res.status(400).json("failed");
+      }
+      res.status(200).json(deleteProduct);
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ message: "server error !!!" });
+    }
+  };
 }
 
 module.exports = new OrdersController();

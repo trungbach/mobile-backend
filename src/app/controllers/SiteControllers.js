@@ -14,9 +14,6 @@ class SiteController {
       const sortArr = sort_by.split("_");
       sort[sortArr[0]] = sortArr[1];
     }
-    if (!name) {
-      return res.status(400).json({ message: "Can not find a name query" });
-    }
     try {
       const listProductSearch = await ProductModel.find({
         ...filter,
