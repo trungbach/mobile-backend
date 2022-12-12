@@ -32,6 +32,7 @@ const Orders = new Schema(
       enum: ["Waiting", "Success", "Failed", "Overtime"],
       default: "Waiting",
     },
+    order_momo_id: { type: String, required: false },
   },
   {
     timestamps: true,

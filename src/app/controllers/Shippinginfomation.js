@@ -1,6 +1,4 @@
 const ShippingInfomationModel = require("./../../models/shippingInfomation");
-var mongoose = require("mongoose");
-var id = mongoose.Types.ObjectId();
 class ShippingInfomation {
   getListShippingByUserId = async (req, res) => {
     const { user_id } = req.query;
@@ -15,6 +13,7 @@ class ShippingInfomation {
       res.status(500).json("Server Error");
     }
   };
+
   updateShippingById = async (req, res) => {
     const { id } = req.params;
     const data = req.body;
@@ -30,6 +29,7 @@ class ShippingInfomation {
       res.status(500).json("Server Error");
     }
   };
+
   deteteShippingById = async (req, res) => {
     const { id } = req.params;
 

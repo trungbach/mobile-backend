@@ -102,16 +102,10 @@ class ProductsController {
       res.status(500).json({ error });
     }
   };
-  //get product by category
-  //product/category/:id
-
-  //put : /products/:id
-  updateProduct(req, res) {}
 
   //poss: /products/create
   createProduct = async (req, res) => {
     var images = [];
-    console.log("files:", req.files);
     const files = req?.files;
     if (!files) {
       return res.status(400).json({ message: "Upload file failed" });
@@ -133,6 +127,9 @@ class ProductsController {
       res.status(500).json({ error });
     }
   };
+
+  //put : /products/:id
+  updateProduct(req, res) {}
 
   // get : /product/trending
   getListTrending = async (req, res, next) => {

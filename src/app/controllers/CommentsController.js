@@ -1,6 +1,5 @@
 const { PAGE_SIZE } = require("../../constants");
 const CommentsModel = require("../../models/commnets");
-const updateRating = require("../middleware/updateRating");
 const { ProductModel } = require("./../../models/Products");
 class CommentController {
   //post /comments/:product_id
@@ -63,22 +62,22 @@ class CommentController {
     const { rating, product_id } = data;
     try {
       const newComment = new CommentsModel(data);
-      const comment = await newComment.save();
+      await newComment.save();
       const commentData = await newComment.populate("user_id");
       commentData._doc.user = commentData._doc.user_id;
-      console.log(Object.keys(commentData));
       delete commentData._doc.user_id;
 
       if (!commentData) {
         return res.status(400).json({ message: "Post comment failed" });
       }
-      updateRating(rating, res, product_id);
+      this.updateRating(rating, res, product_id);
       res.status(200).json(commentData._doc);
     } catch (error) {
       console.log(error.message);
       res.status(500).json("Server error !!!");
     }
   };
+
   updateComment = async (req, res) => {
     let data = req.body;
     const { rating } = data;
@@ -94,12 +93,13 @@ class CommentController {
       }
       commentUpdate.user = commentUpdate.user_id;
       delete commentUpdate.user_id;
-      updateRating(rating, res, commentUpdate.product_id);
+      this.updateRating(rating, res, commentUpdate.product_id);
       res.status(200).json(commentUpdate);
     } catch (error) {
       res.status(500).json("Server error !!!");
     }
   };
+
   //DELETE : /comments/:id
   deteteComment = async (req, res) => {
     let { id } = req.params;
@@ -113,10 +113,35 @@ class CommentController {
       if (!commentDelete) {
         return res.status(400).json({ message: "delete failed" });
       }
-      updateRating(rating, res, product_id);
+      this.updateRating(rating, res, product_id);
       res.status(200).json(commentDelete);
     } catch (error) {
       res.status(500).json("Server error !!!");
+    }
+  };
+
+  updateRating = async (rating, res, product_id) => {
+    if (rating && rating > 0) {
+      const listComment = await CommentsModel.find({ product_id });
+      if (!listComment) {
+        return res.status(400).json({ message: "failed" });
+      } else {
+        let vote_average = 0;
+        const vote_count = listComment.filter((vote) => vote.rating > 0).length;
+        if (vote_count > 0) {
+          vote_average = (
+            listComment.reduce((total, vote) => {
+              if (vote.rating !== "undefined" && vote.rating > 0) return total + vote.rating;
+              else return total;
+            }, 0) / vote_count
+          ).toFixed(1);
+        }
+        const productUpdate = await ProductModel.findOneAndUpdate(
+          { _id: product_id },
+          { vote_count, vote_average }
+        );
+        if (!productUpdate) return res.status(400).json({ message: "rating failed" });
+      }
     }
   };
 }

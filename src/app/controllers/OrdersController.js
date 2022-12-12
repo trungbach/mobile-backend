@@ -1,6 +1,5 @@
 const OrdersModel = require("./..//../models/orders");
 const { CartModel } = require("./../../models/cart");
-const orders = require("./..//../models/orders");
 const { query } = require("express");
 const crypto = require("crypto");
 const superagent = require("superagent");
@@ -8,27 +7,19 @@ const superagent = require("superagent");
 class OrdersController {
   getOrderByIdUser = async (req, res) => {
     const { user_id } = req.query;
-    if (!user_id) {
-      return res.status(400);
-    }
     const reqQuery = req.query;
     if (reqQuery.status) {
       query.status = reqQuery.status;
     }
     try {
-      const listOrder = await OrdersModel.find({ user_id }).lean().select({
-        status: 1,
-        orderDate: 1,
-        quantity_items: 1,
-        total_price: 1,
-      });
+      const listOrder = await OrdersModel.find({ user_id }).lean().sort({ updatedAt: -1 });
       if (!listOrder) {
         return res.status(400).json({ message: "failed!!!" });
       }
 
       res.status(200).json(listOrder);
     } catch (error) {
-      console.log(error.message);
+      console.log("getOrderByIdUser error:", error.message);
       res.status(500).json({ message: "server error !!!" });
     }
   };
@@ -37,7 +28,6 @@ class OrdersController {
     const id = req.params.id;
     const data = req.body;
     const { status } = data;
-    console.log(status);
     if (!["Packing", "Shipping", "Arriving", "Susscess", "cancelled"].includes(status)) {
       return res.status(400).json({ message: "status is not valid !!!" });
     }
@@ -93,7 +83,7 @@ class OrdersController {
 
     // tạo order trạng thái chưa khởi tạo thanh toán, xóa cart.
     try {
-      const orderMomoResponse = await this.createMomo(data.total_price, res);
+      const orderMomoResponse = await this.createMomo(data.total_price);
 
       // order thanh cong tra ve object co chua deeplink momo thanh toan. Thi xoa don do khoi Carts.
       if (orderMomoResponse?.deeplink) {
@@ -104,6 +94,7 @@ class OrdersController {
           return res.status(400).json("failed");
         } else {
           const order = { ...data };
+          order.order_momo_id = orderMomoResponse.orderId;
           delete order.orders_id;
           order.order_products = listCart.map((item) => {
             item.order_product_item = item.product_id;
@@ -122,14 +113,13 @@ class OrdersController {
   };
 
   // tạo order momo
-  async createMomo(amount, response) {
+  async createMomo(amount) {
     const accessKey = "F8BBA842ECF85";
     const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
     const partnerCode = "MOMO";
     const orderInfo = "Payment for Super Shoes";
-    const redirectUrl = "exp://192.168.0.43:19000";
-    // const redirectUrl = "exp://172.20.10.2:19000";
-    const ipnUrl = "exp://192.168.1.108:19000";
+    const redirectUrl = `exp://${process.env.BASE_URL}:19000`;
+    const ipnUrl = `exp://${process.env.BASE_URL}:19000`;
     const requestType = "captureWallet";
     const orderId = `${partnerCode}${new Date().getTime()}`;
     const requestId = orderId;
@@ -182,14 +172,9 @@ class OrdersController {
         .post(apiEndpoint)
         .send(requestBody)
         .set("Content-Type", "application/json");
-      // .end(function (err, res) {
-      //   console.log("err", err);
-      //   console.log("res", res.body);
-      //   return response.status(200).json(res.body);
-      // });
       return res.body;
     } catch (error) {
-      console.log("errror", error);
+      console.log("error create Momo order:", error);
     }
   }
 
@@ -240,10 +225,10 @@ class OrdersController {
       res.on("data", async (body) => {
         console.log("Check status response: ", body);
         const { resultCode } = JSON.parse(body);
-        if (resultCode === 9000) {
+        if (resultCode === 0) {
           // thanh cong cua Momo
           const updateOrder = await OrdersModel.findOneAndUpdate(
-            { _id: id },
+            { order_momo_id: orderId },
             { payment_status: "Success" },
             {
               new: true,
@@ -259,8 +244,9 @@ class OrdersController {
               },
             })
             .populate("shipping_infomation");
+          console.log("updateOrder", updateOrder);
           if (!updateOrder) {
-            return res.status(400).json({ message: "update failed" });
+            return response.status(400).json({ message: "update failed" });
           }
         }
         response.status(200).json({ ...JSON.parse(body) });

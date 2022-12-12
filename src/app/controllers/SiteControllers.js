@@ -14,6 +14,11 @@ class SiteController {
       const sortArr = sort_by.split("_");
       sort[sortArr[0]] = sortArr[1];
     }
+    if (["vote_average+asc", "vote_average+desc"].includes(sort_by)) {
+      const sortArr = sort_by.split("+");
+      sort[sortArr[0]] = sortArr[1];
+    }
+
     try {
       const listProductSearch = await ProductModel.find({
         ...filter,
