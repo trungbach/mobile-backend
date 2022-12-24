@@ -1,6 +1,6 @@
 const { ProductModel } = require("../../models/Products");
-const { PAGE_SIZE } = require("./../../constants");
-class SiteController {
+const { PAGE_SIZE } = require("../../constants");
+class SearchController {
   searchProductByName = async (req, res) => {
     const { name } = req.query;
     const filter = req.filter;
@@ -46,4 +46,4 @@ class SiteController {
     }
   };
 }
-module.exports = new SiteController();
+module.exports = new SearchController();

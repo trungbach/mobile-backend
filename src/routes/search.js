@@ -1,8 +1,8 @@
 const express = require("express");
 const filterProduct = require("../app/middleware/filterProduct");
 const router = express.Router();
-const siteController = require("../app/controllers/SiteControllers");
+const searchController = require("../app/controllers/SearchController");
 
-router.get("/", filterProduct, siteController.searchProductByName);
+router.get("/", filterProduct, searchController.searchProductByName);
 
 module.exports = router;
